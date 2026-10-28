@@ -1,15 +1,32 @@
 import discord
 import os
+import json
 from dotenv import load_dotenv
 from discord.ext import commands
 
 # Load and get token
 load_dotenv()
-TOKEN = os.getenv("DISCORD_TOKEN")
+TOKEN = os.getenv ("DISCORD_TOKEN")
 
-# Set members intent true
+# Set Intents
 intents = discord.Intents.default()
 intents.members = True
+
+def VerifyUser(user_id):
+    if os.path.exists("data.json"):
+        with open("data.json") as data:
+            converted = json.load(data)
+            member_quantity = len(converted['users'])
+
+            if str(user_id) in converted['users']:
+                return converted['users'][str(user_id)]
+            else:
+                converted['users'][str(user_id)] = member_quantity + 1
+
+                with open("data.json", "w") as data:
+                    json.dump(converted, data, indent=4)
+                return converted['users'][str(user_id)]
+
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -54,7 +71,8 @@ async def on_ready():
 @bot.event
 async def on_member_join(member: discord.Member):
 
-    await member.edit(nick=f"User#{member.guild.member_count:04d}")
+    user_index = VerifyUser(member.id)
+    await member.edit(nick=f"User#{user_index:04d}")
 
     # Bot send identify message
     bot_channel: discord.TextChannel = member.guild.get_channel(1563958013663121651)
